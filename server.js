@@ -1,6 +1,7 @@
 const {
     readFromFile,
     readAndAppend,
+    writeToFile
   } = require("./helpers/fshelper");
 
 const express = require('express');
@@ -61,6 +62,34 @@ app.post('/api/notes',(req,res)=>{
       res.json('Error in posting newNotes');
     }
 });
+
+app.delete('/api/notes/:id', (req, res) => {
+    const noteId = req.params.id;
+
+    readFromFile('./db/db.json',(err,data)=>{
+        if(err){
+        console.error(err);
+        res.status(500).json({ error: 'Unable to read from file' });
+        return;}
+
+        const notes=JSON.parse(data);
+        //Find the index of the note object that matches the ID of the paramater.
+        const index= notes.findIndex((note)=>note.noteID === noteID);
+
+        if (index === -1) {
+            // Note not found
+            callback(new Error('Note not found'));
+            return;
+          }
+
+        notes.splice(index,1);
+
+        writeToFile('./db/db.json',notes);
+
+        res.json({ status: 'success', message: 'Note deleted successfully' });
+    })
+})
+
 
 
 app.listen(PORT, () =>
