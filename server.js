@@ -8,7 +8,7 @@ const express = require('express');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid')
 
-const PORT = process.env.PORT || 3001;
+const PORT =  3001;
 
 const app = express();
 
@@ -20,32 +20,29 @@ app.get('/notes',(req,res)=>{
     res.sendFile(path.join(__dirname, '/public/notes.html'));
 });
 
-app.get('*',(req,res)=>{
+app.get('/',(req,res)=>{
     res.sendFile(path.join(__dirname,'/public/index.html'));
 });
 
-app.get('/api/notes',(req,res)=>{
-    readFromFile('./db/db.json',(err,data)=>{
-        if(err){
-            console.error(err);
-           res.status(500).json({error: 'Unable to read from file'});
-           return
-        }
-        else{
-            const notes = JSON.parse(data);
-            res.json(notes);
-        }
+app.get('/api/notes', (req, res) => {
+    readFromFile('./db/db.json').then((data) => {
+      res.json(JSON.parse(data));
     })
-});
+         .catch((err) => {
+            console.error(err);
+            res.status(500).json({ error: 'Unable to read from file' });
+        });
+ });
+
 
 app.post('/api/notes',(req,res)=>{
-    const{noteId,title,text} = req.body;
+    const{title,text} = req.body;
 
     if(title&&text){
         const newNotes={
             title,
             text,
-            noteId:uuidv4(),
+            id:uuidv4(),
         };
 
     readAndAppend(newNotes,'./db/db.json');
@@ -74,7 +71,7 @@ app.delete('/api/notes/:id', (req, res) => {
 
         const notes=JSON.parse(data);
         //Find the index of the note object that matches the ID of the paramater.
-        const index= notes.findIndex((note)=>note.noteID === noteID);
+        const index= notes.filter((note)=>note.id !== noteId);
 
         if (index === -1) {
             // Note not found
